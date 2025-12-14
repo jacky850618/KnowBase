@@ -1,7 +1,6 @@
 # app.py
 import os
 import streamlit as st
-from pathlib import Path
 
 # ==================== 持久化配置 ====================
 from config_manager import load_config, save_config, get_proxy_url
@@ -46,6 +45,7 @@ st.set_page_config(
 current_provider_key = config["model_provider"]
 current_provider = config["providers"][current_provider_key]
 
+
 # ==================== 初始化组件 ====================
 @st.cache_resource
 def get_retriever():
@@ -56,6 +56,7 @@ def get_retriever():
         collection_name="rag_collection"
     )
     return vectordb.as_retriever(search_kwargs={"k": config["rag_settings"]["retriever_k"]})
+
 
 @st.cache_resource
 def get_llm():
@@ -69,6 +70,7 @@ def get_llm():
         max_tokens=2048,
         timeout=60.0,
     )
+
 
 @st.cache_resource
 def get_rag_chain():
@@ -84,6 +86,7 @@ def get_rag_chain():
     ])
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     return create_retrieval_chain(retriever, question_answer_chain)
+
 
 # ==================== 侧边栏导航 ====================
 st.sidebar.title("🗂️ 导航")
@@ -109,7 +112,8 @@ if page == "💬 智能问答":
     # 显示文档统计
     docs_count = len(list_documents())
     st.info(f"📚 当前知识库中共有 **{docs_count}** 个文档可供查询")
-    st.caption("💡 小提示：文档数指你上传的文件数量，“块数”是系统自动将长文档切分成的小段，用于提升检索精度和回答质量，完全正常～")
+    st.caption(
+        "💡 小提示：文档数指你上传的文件数量，“块数”是系统自动将长文档切分成的小段，用于提升检索精度和回答质量，完全正常～")
 
     if docs_count == 0:
         st.warning("⚠️ 知识库为空，请到【管理后台】上传文档后即可提问")
@@ -138,7 +142,7 @@ if page == "💬 智能问答":
                         st.markdown("### 📑 来源出处")
                         for i, doc in enumerate(result["context"]):
                             source = doc.metadata.get("source", "未知文档")
-                            with st.expander(f"来源 {i+1}: {source}"):
+                            with st.expander(f"来源 {i + 1}: {source}"):
                                 st.caption(doc.page_content[:800] + ("..." if len(doc.page_content) > 800 else ""))
                     else:
                         st.info("未检索到相关内容，答案基于模型通用知识生成")
@@ -176,16 +180,18 @@ else:  # page == "⚙️ 管理后台"
                     st.warning(f"⚠️ {file.name} 已存在，将被覆盖")
                 with open(file_path, "wb") as f:
                     f.write(file.getbuffer())
-                doc_id = add_document(file_path, original_name=file.name)
-                st.success(f"✅ {file.name} 入库成功！ID: `{doc_id[:8]}`")
+                with st.spinner(f"正在解析 {file.name} 的表格和图片..."):
+                    add_document(file_path, original_name=file.name)
+                st.success(f"✅ {file.name} 入库成功！")
                 progress.progress((i + 1) / len(uploaded_files))
-            st.rerun()  # 上传完成后刷新列表
+            st.rerun()
 
         st.divider()
 
         # ==================== 文档列表：搜索 + 分页 ====================
         st.subheader("已入库文档列表")
-        st.info("📌 说明：每个文档会被智能切分成多个“块”（chunk），块数越多表示文档越长。这样做是为了让系统更精准地找到相关内容并生成更好答案。一个文档显示多块是正常现象，不是重复存储。")
+        st.info(
+            "📌 说明：每个文档会被智能切分成多个“块”（chunk），块数越多表示文档越长。这样做是为了让系统更精准地找到相关内容并生成更好答案。一个文档显示多块是正常现象，不是重复存储。")
 
         all_docs = list_documents()
 
@@ -305,7 +311,8 @@ else:  # page == "⚙️ 管理后台"
         proxy_test_disabled = True
         if proxy["enabled"]:
             col1, col2 = st.columns(2)
-            proxy["protocol"] = col1.selectbox("协议", ["http", "https", "socks5"], index=["http", "https", "socks5"].index(proxy["protocol"]))
+            proxy["protocol"] = col1.selectbox("协议", ["http", "https", "socks5"],
+                                               index=["http", "https", "socks5"].index(proxy["protocol"]))
             proxy["host"] = col2.text_input("主机/IP", value=proxy["host"])
 
             col3, col4 = st.columns(2)
@@ -320,6 +327,7 @@ else:  # page == "⚙️ 管理后台"
 
             if st.button("🔗 测试连接", disabled=proxy_test_disabled):
                 from config_manager import test_proxy_connection
+
                 with st.spinner("测试中..."):
                     success, msg = test_proxy_connection(config, show_traceback=show_detail)
                     if success:

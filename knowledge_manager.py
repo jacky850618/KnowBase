@@ -1,12 +1,13 @@
-import os
 import uuid
 from pathlib import Path
 from langchain_chroma import Chroma
+from langchain_core.documents import Document
 from langchain_community.document_loaders import (
     PyPDFLoader, TextLoader, UnstructuredMarkdownLoader, UnstructuredWordDocumentLoader
 )
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from embeddings import get_embedding_model
+from parsers import parse_pdf_elements
 from config import CHROMA_DB_PATH
 
 embedding = get_embedding_model()
@@ -34,8 +35,18 @@ def add_document(file_path: str, original_name: str = None) -> str:
     loader = get_loader(file_path)
     docs = loader.load()
     splits = text_splitter.split_documents(docs)
+
+    # 新增：如果 PDF，加表格/图片解析
+    if file_path.lower().endswith('.pdf'):
+        text_chunks, table_chunks, image_chunks = parse_pdf_elements(file_path)
+        for table in table_chunks:
+            splits.append(Document(page_content=table, metadata={"source": original_name, "type": "table", "doc_id": doc_id}))
+        for image_desc in image_chunks:
+            splits.append(Document(page_content=image_desc, metadata={"source": original_name, "type": "image", "doc_id": doc_id}))
+
     for split in splits:
         split.metadata.update({"doc_id": doc_id, "source": original_name or Path(file_path).name})
+
     ids = [f"{doc_id}_{i}" for i in range(len(splits))]
     vectordb.add_documents(documents=splits, ids=ids)
     return doc_id

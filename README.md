@@ -21,7 +21,7 @@
 ## 🌟 核心亮点
 
 - **100% 本地存储**：所有文档和向量数据库保存在本地，隐私完全掌握在自己手中
-- **支持多种文档格式**：PDF、TXT、MD、DOCX，一键上传自动解析
+- **支持多种文档格式**：PDF(支持OCR识别图片)、TXT、MD、DOCX，一键上传自动解析
 - **智能文档切分 + 向量检索**：基于 BGE 嵌入模型，实现高精度语义检索
 - **多大模型随意切换**：一键切换 DeepSeek、OpenAI (ChatGPT)、Groq、Claude、Gemini，永远用当时最好的模型
 - **内置代理支持**：HTTP/HTTPS/SOCKS5 全协议支持 + 一键测试连接，国内使用无压力
@@ -51,6 +51,9 @@ cd personal-rag-knowledge-base
 
 ### 2. 安装依赖（推荐新建虚拟环境）
 ```
+
+brew install poppler
+
 pip install -r requirements.txt
 ```
 
